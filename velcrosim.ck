@@ -1,4 +1,7 @@
 
+// this program simulates the tearing apart of velcro using a poisson distribution 
+// function. 
+
 class Velcro 
 { 
     
@@ -9,21 +12,35 @@ class Velcro
     filter => Gain right; 
 } 
 
-// drops per sec (change over time) 
-40 => int N; 
+// rips per sec / change over time
+2 => int N;
 
-// rain drops, so we can rotate around and give each time to 
-// have a tail (due to the filter) before being reused for the rain drops 
+// control signal to create envelope of ripping density 
+SinOsc lsin => blackhole; 
+0.1 => lsin.freq; 
+50 => lsin.gain;  
+
+
+// to automate density contour (density of rips) 
+fun void lambdaContour(){ 
+    while(true){
+        lsin.last() + 51 => float myval; // add offset by Amp/2 to keep pos
+        myval $ int => int myint; 
+        myint => N;
+        //<<<myint>>>;
+        100::ms => now; 
+    }    
+}
 
 
 // linear panning
 fun void panLinear(float pan, UGen left, UGen right) 
 { 
-    // clamp to bounds 
+    // bound pans
     if(pan<0) 0 =>pan; 
     else if(pan >1) 1 => pan; 
     
-    //set gains 
+    //initialize gains 
     1-pan => left.gain; 
     pan => right.gain; 
 } 
@@ -52,7 +69,7 @@ fun void panning(int which, float pan, UGen left, UGen right)
     else <<< "[pan]: ERROR specifying whih pan type!", "">>>; 
 } 
 
-//the drop 
+//the rip 
 fun void oneRip(Velcro rip, float lowerFreq, float upperFreq, int panType)
 {
     //randomize filter 
@@ -63,28 +80,30 @@ fun void oneRip(Velcro rip, float lowerFreq, float upperFreq, int panType)
     Math.random2f(0.1, 0.8) => rip.velcro.next; 
 } 
 
-//time until next event, given rate 
+//time until next rip event, given rate 
 // (this is based on the exponential distribution, which models 
 // time until next event in a poisson process - the events in this 
 // model occur independently and have a rate of lambda) 
 fun float timeUntilNext( float lambda) 
-{ return -Math.log(1-Math.random2f(0,1)) /lambda;} 
+{ 
+    return -Math.log(1-Math.random2f(0,1)) /lambda;
+} 
 
 // define the 'clip' as a function 
-fun void velClip(dur myDur, int N) 
+fun void velClip(dur myDur) 
 { 
-    // rain drops, so we can rotate around and give each time to 
-    // have a tail (due to the filter) before being reused for the 
-    // rain drop 
-    Velcro rips[N]; 
+    // my array of velcro rips d
+    spork ~lambdaContour();
     
-    //reverb 
+    Velcro rips[100]; 
+    
+    // just a tad of reverb 
     JCRev rL => dac.left; 
     JCRev rR => dac.right; 
     // mix
     0.01 => rL.mix => rR.mix; 
     
-    //connect 
+    //connect the ugens 
     for(int i; i<rips.size(); i++){ 
         rips[i].left => rL; 
         rips[i].right => rR; 
@@ -97,29 +116,27 @@ fun void velClip(dur myDur, int N)
     myBeg + myDur => time myEnd; 
     
     while(now < myEnd){ 
-        // LFO on upper freq 
-        //800 + 2200*(1+Math.sin(now/second))/2 => float upperFreq;
-        //800 + 100*(1+Math.sin((now/second)/2))/2 => float lowerFreq;
-        
+        <<<N>>>;
+        // random bounded cutoffs
         Math.random2f(0,1000) => float lowerFreq; 
         Math.random2f(2000,4000) => float upperFreq;
         //<<<lowerFreq, upperFreq>>>;   
-        //drop of rain 
+        //trigger single rip  
         oneRip( rips[counter], lowerFreq, upperFreq, CONSTANTPOWER); 
         // increment 
         counter++; 
-        //modulo by rain array size 
+        //modulo by rip array size 
         rips.size() %=> counter; 
-        // wait (Poisson: from 220b) 
+        // wait via Poisson dist
         timeUntilNext(N)::second=> now; 
     } 
     //extra time for reverb Tails 
-    200::ms => now; 
+    10::ms => now; 
     <<<"\tclip end at", now/second, "seconds">>>; 
 } 
 
 //TIME 0, start the clip 
-spork ~velClip(20::second, N); //launch clip in independent shred 
+spork ~velClip(20::second); //launch clip in independent shred 
 
 // write to a file
 dac => WvOut2 out => blackhole;
@@ -131,9 +148,7 @@ me.yield(); // on this exact sample, yield master shred so sporked one can finis
 out.closeFile();
 
 
-//last item in this program is this print statement 
 <<<"program end at", now/second, "seconds">>>; 
-// and with nothign left to do this program exits 
 
     
     
