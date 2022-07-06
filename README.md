@@ -6,4 +6,6 @@ This is a repo that applies a few different techniques to the real-time physical
 Velvet Noise
 + randomly triggered impulse train in which the sign is chosen quasi randomly to be positive or negative. Pulse density ($N_d$, number of impulses per second) is a function of the average distance between impulses $T_d$. 
 
+$$ T_d = {f_s \over N_d}$
+
 
