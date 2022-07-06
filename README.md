@@ -15,7 +15,7 @@ $$ k(m) = {round[m*T_d + r_1 (m)(T_d-1)]} $$
 
 to create governing equation for velvet-noise sequence:
 
-$$ s(n) = {2 round [r_2 (m)] - 1}, when n = k(m)} $$
+$$ s(n) = {2 round [r_2 (m)] - 1, when n = k(m)} $$
 
 
 
