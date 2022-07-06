@@ -15,7 +15,12 @@ $$ k(m) = {round[m*T_d + r_1 (m)(T_d-1)]} $$
 
 to create governing equation for velvet-noise sequence:
 
-$$ s(n) = {2 round [r_2 (m)] - 1}, when {n = k(m)} $$
+$$ s(n) = {2 round [r_2 (m)] - 1}, {n = k(m)} $$ 
+
+otherwise s(n) = 0. $n$ is the sample index, $k(m)$ are the impulse locations. 
+
+
+<img width="728" alt="velvet-noise-figures" src="https://user-images.githubusercontent.com/1406597/177534725-fe3c194d-a935-476d-bd3b-74a9517a7a9d.png">
 
 
 
